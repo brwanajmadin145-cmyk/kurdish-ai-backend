@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+gunicorn
+python-multipart
+requests
+google-generativeai
+jinja2
+python-docx
+python-pptx
+fpdf
