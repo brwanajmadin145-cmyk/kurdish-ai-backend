@@ -1,6 +1,7 @@
 fastapi
 uvicorn
 gunicorn
+slowapi
 python-multipart
 requests
 google-generativeai
