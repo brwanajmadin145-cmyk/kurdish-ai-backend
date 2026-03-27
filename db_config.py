@@ -13,20 +13,11 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 @contextmanager
 def get_db():
-    """Get database connection with proper cleanup"""
-    # ئەگەر لەسەر Railway بوویت ئەمە بەکاردێت
-    if DATABASE_URL:
-        conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
-    else:
-        # ئەگەر لەسەر کۆمپیوتەرەکەی خۆت بوویت (Local) ئەمە بەکاردێت
-        conn = psycopg2.connect(
-            host=os.getenv("DATABASE_HOST"),
-            database=os.getenv("DATABASE_NAME"),
-            user=os.getenv("DATABASE_USER"),
-            password=os.getenv("DATABASE_PASSWORD"),
-            port=os.getenv("DATABASE_PORT", "5432"),
-            cursor_factory=RealDictCursor
-        )
+    # 🚨 ڕاستەوخۆ لینکەکە لێرە دادەنێین تا پشت بە Railway نەبەستین
+    # ئەمە ٪١٠٠ کار دەکات و هەڵەی Socket ناهێڵێت
+    DATABASE_URL = "postgresql://postgres:PGJJyfNDbeAqdsjarzhmlHJDAjrVolMh@shortline.proxy.rlwy.net:10741/railway"
+    
+    conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
     try:
         yield conn
     finally:
