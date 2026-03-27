@@ -11,3 +11,4 @@ reportlab
 python-docx
 python-pptx
 pytesseract
+python-multipart
