@@ -13,15 +13,19 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 @contextmanager
 def get_db():
-    # 🚨 ڕاستەوخۆ لینکەکە لێرە دادەنێین تا پشت بە Railway نەبەستین
-    # ئەمە ٪١٠٠ کار دەکات و هەڵەی Socket ناهێڵێت
+    # 🚨 بڕوا گیان، لێرەدا ڕاستەوخۆ بەستەرەکەمان داناوە بۆ ئەوەی Railway تێکی نەدات
+    # ئەم پاسۆردەی خوارەوە بە وردی بە پیتی بچووک و گەورە وەک ئەوەی بۆت ناردم نووسراوە
     DATABASE_URL = "postgresql://postgres:PGJJyfNDbeAqdsjarzhmlHJDAjrVolMh@shortline.proxy.rlwy.net:10741/railway"
     
-    conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
     try:
+        conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
         yield conn
+    except Exception as e:
+        print(f"❌ Database Error: {e}")
+        raise
     finally:
-        conn.close()
+        if 'conn' in locals():
+            conn.close()
 
 
 def init_database():
