@@ -1,5 +1,6 @@
-fastapi
+gunicorn
 uvicorn
+fastapi
 python-dotenv
 requests
 psycopg2-binary
