@@ -13,9 +13,8 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 @contextmanager
 def get_db():
-    # 🚨 بڕوا گیان، لێرەدا ڕاستەوخۆ بەستەرەکەمان داناوە بۆ ئەوەی Railway تێکی نەدات
-    # ئەم پاسۆردەی خوارەوە بە وردی بە پیتی بچووک و گەورە وەک ئەوەی بۆت ناردم نووسراوە
-    DATABASE_URL = "PGJJyfNDbeAQdsjarzhmlHJDAjrVolMh"
+    # 🚨 بڕوا گیان، لێرەدا دەبێت هەموو لینکەکە بنووسیت، نەک تەنها پاسۆردەکە
+    DATABASE_URL = "postgresql://postgres:PGJJyfNDbeAqdsjarzhmlHJDAjrVolMh@shortline.proxy.rlwy.net:10741/railway"
     
     try:
         conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
