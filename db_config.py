@@ -8,23 +8,22 @@ from dotenv import load_dotenv
 # 🔒 LOAD ENVIRONMENT VARIABLES
 load_dotenv()
 
-# ✅ GET DATABASE URL FROM ENVIRONMENT
-DATABASE_URL = os.getenv("DATABASE_URL")
+# ✅ SECURE DATABASE CONFIG
+DB_CONFIG = {
+    "host": os.getenv("DATABASE_HOST"),
+    "database": os.getenv("DATABASE_NAME"),
+    "user": os.getenv("DATABASE_USER"),
+    "password": os.getenv("DATABASE_PASSWORD")
+}
 
 @contextmanager
 def get_db():
-    # بڕوا گیان، لێرەدا دڵنیابە نیشانەی " لە دوای یەکسان و لە کۆتایی هەیە
-    DATABASE_URL = "postgresql://postgres:PGJJyfNDbeAQdsjarzhmlHJDAjrVolMh@shortline.proxy.rlwy.net:10741/railway"
-    
+    """Get database connection with proper cleanup"""
+    conn = psycopg2.connect(**DB_CONFIG, cursor_factory=RealDictCursor)
     try:
-        conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
         yield conn
-    except Exception as e:
-        print(f"❌ Database connection error: {e}")
-        raise
     finally:
-        if 'conn' in locals():
-            conn.close()
+        conn.close()
 
 
 def init_database():
