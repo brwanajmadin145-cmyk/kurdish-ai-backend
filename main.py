@@ -66,7 +66,11 @@ document_buffer = ""
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 # ===================== TESSERACT OCR SETUP =====================
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+# لە جیاتی ئەو دێڕەی سەرەوە، ئەمە دابنێ:
+if os.name == 'nt': # ئەگەر ویندۆز بوو
+    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+else: # ئەگەر لینوکس (Render) بوو
+    pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
 
 # ===================== NLLB TRANSLATOR SETUP =====================
 # 🔒 LOAD ENVIRONMENT VARIABLES
@@ -560,6 +564,11 @@ def translate_endpoint(request: TranslationRequest):
         }
     else:
         return {"success": False, "error": result["error"]}
+
+
+@app.get("/")
+def health_check():
+    return {"status": "alive", "service": "Kurdish AI"}
     
 
 # ===================== CHAT (FAST WITH GROQ) =====================
