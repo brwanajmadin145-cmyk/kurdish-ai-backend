@@ -9,17 +9,30 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ✅ SECURE DATABASE CONFIG
-DB_CONFIG = {
-    "host": os.getenv("DATABASE_HOST"),
-    "database": os.getenv("DATABASE_NAME"),
-    "user": os.getenv("DATABASE_USER"),
-    "password": os.getenv("DATABASE_PASSWORD")
-}
+# Render بەزۆری DATABASE_URL بەکاردێنێت کە هەموو زانیارییەکانی تێدایە
+database_url = os.getenv("DATABASE_URL")
+
+if database_url:
+    # ئەگەر لەسەر Render بوویت و DATABASE_URL هەبوو، ئەمە بەکاربهێنە
+    DB_CONFIG = database_url
+else:
+    # ئەگەر لەسەر کۆمپیوتەرەکەی خۆت بوویت (Local)، وەک پێشتر کار بکە
+    DB_CONFIG = {
+        "host": os.getenv("DATABASE_HOST"),
+        "database": os.getenv("DATABASE_NAME"),
+        "user": os.getenv("DATABASE_USER"),
+        "password": os.getenv("DATABASE_PASSWORD")
+    }
 
 @contextmanager
 def get_db():
     """Get database connection with proper cleanup"""
-    conn = psycopg2.connect(**DB_CONFIG, cursor_factory=RealDictCursor)
+    # لێرەدا ئەگەر DB_CONFIG لینک بێت یان Dictionary، psycopg2 دەیناسێتەوە
+    if isinstance(DB_CONFIG, str):
+        conn = psycopg2.connect(DB_CONFIG, cursor_factory=RealDictCursor)
+    else:
+        conn = psycopg2.connect(**DB_CONFIG, cursor_factory=RealDictCursor)
+    
     try:
         yield conn
     finally:
