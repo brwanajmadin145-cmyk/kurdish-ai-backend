@@ -48,15 +48,10 @@ limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# 🔒 CORS PROTECTION
 app.add_middleware(
     CORSMiddleware,
-    # 🌍 ڕێگەدان بە هەموو سەرچاوەیەک بۆ ئەوەی مۆبایلی ڕاستەقینە بلۆک نەبێت
-    allow_origins=["*"], 
-    allow_credentials=True,
-    # 🚀 ڕێگەدان بە هەموو جۆرە داواکارییەک (GET, POST, هتد)
-    allow_methods=["*"], 
-    # 📝 ڕێگەدان بە هەموو جۆرە Header بۆ ئەوەی JSON بە ڕێکی بنێردرێت
+    allow_origins=["*"], # ڕێگەدان بە هەموو ناونیشانەکان
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -1570,37 +1565,14 @@ def reset_account_endpoint(user_id: str):
 # ===================== API INFO =====================
 @app.get("/")
 def root():
+    # ... ئەو کۆدەی خۆت لێرە دابنێ ...
     return {
         "name": "Kurdish AI",
-        "version": "5.0 - Complete Multilingual Edition",
-        "creator": "Brwa Najmadin Mohhmad",
-        "supervisor": "Naz Najib Abdulla",
-        "institution": "Computer Institute of Sulaymaniyah",
-        "features": [
-            "💬 Multilingual Chat (12+ languages with Kurdish AI integration)",
-            "🌍 Translation (200+ languages via NLLB)",
-            "📄 Document Generation (PDF, Word, PowerPoint with AI content)",
-            "🎨 Image Generation (FLUX.1 Schnell - Professional Quality)",
-            "✏️ Image Editing (InstructPix2Pix)",
-            "🔍 OCR & Code Analysis (Tesseract + AI)",
-            "💾 Conversation History (PostgreSQL)",
-            "📁 File Management System",
-            "⭐ User Feedback System",
-            "🔒 Secure (Environment Variables, Rate Limiting, CORS)"
-        ],
-        "supported_languages": {
-            "chat": ["Kurdish", "English", "Arabic", "Turkish", "Persian", "Russian", "French", "Spanish", "German", "Chinese", "Japanese", "Hindi"],
-            "translation": "200+ languages via Meta NLLB"
-        },
-        "document_generation": {
-            "types": ["PDF", "Word", "PowerPoint"],
-            "default_pages": 5,
-            "ai_powered": "GROQ generates detailed content automatically"
-        },
-        "image_generation": {
-            "generation_model": "FLUX.1 Schnell (Hugging Face)",
-            "editing_model": "InstructPix2Pix",
-            "quality": "Professional (9.5/10)",
-            "speed": "3-5 seconds"
-        }
+        # پاشان باقی زانیارییەکان
     }
+
+# ✅ ئەمە زیاد بکە: Render ئەم ڕێگەیە بەکاردێنێت بۆ پشکنینی تەندروستی سێرڤەر
+@app.head("/")
+def head_root(response: Response):
+    response.status_code = 200
+    return
