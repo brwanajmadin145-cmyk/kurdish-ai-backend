@@ -51,9 +51,12 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # 🔒 CORS PROTECTION
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:*", "http://10.0.2.2:*", "http://127.0.0.1:*"],
+    # 🌍 ڕێگەدان بە هەموو سەرچاوەیەک بۆ ئەوەی مۆبایلی ڕاستەقینە بلۆک نەبێت
+    allow_origins=["*"], 
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    # 🚀 ڕێگەدان بە هەموو جۆرە داواکارییەک (GET, POST, هتد)
+    allow_methods=["*"], 
+    # 📝 ڕێگەدان بە هەموو جۆرە Header بۆ ئەوەی JSON بە ڕێکی بنێردرێت
     allow_headers=["*"],
 )
 
