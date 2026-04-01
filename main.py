@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, UploadFile, File, Form
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Response
 from pydantic import BaseModel
 from typing import Optional
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -1563,15 +1564,31 @@ def reset_account_endpoint(user_id: str):
         }
 
 # ===================== API INFO =====================
-@app.get("/")
-def root():
-    # ... ئەو کۆدەی خۆت لێرە دابنێ ...
-    return {
+@app.api_route("/", methods=["GET", "HEAD"])
+def root(response: Response):
+    """
+    ئەم بەشە هەم داواکاری GET قبوڵ دەکات (بۆ بینینی زانیارییەکان)
+    هەم داواکاری HEAD (بۆ ئەوەی Render بزانێت سێرڤەرەکە ساغە)
+    """
+    
+    # زانیارییەکانی پڕۆژەکەت
+    project_info = {
         "name": "Kurdish AI",
-        # پاشان باقی زانیارییەکان
+        "version": "5.0 - Complete Multilingual Edition",
+        "creator": "Brwa Najmadin Mohhmad",
+        "supervisor": "Naz Najib Abdulla",
+        "institution": "Computer Institute of Sulaymaniyah",
+        "status": "online",
+        "features": [
+            "💬 Multilingual Chat", "🌍 Translation", "📄 Document Generation",
+            "🎨 Image Generation", "🔒 Secure History"
+        ]
     }
 
-# ✅ ئەمە زیاد بکە: Render ئەم ڕێگەیە بەکاردێنێت بۆ پشکنینی تەندروستی سێرڤەر
+    # ئەگەر Render تەنها پشکنینی دەکرد (HEAD)، تەنها کۆدی 200 بنێرە و تەواو
+    response.status_code = 200
+    
+    return project_info
 @app.head("/")
 def head_root(response: Response):
     response.status_code = 200
