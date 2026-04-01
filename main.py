@@ -61,7 +61,7 @@ app.add_middleware(
 init_database()
 
 # 🔒 USE ENVIRONMENT VARIABLES
-BASE_URL = os.getenv("BASE_URL", "http://10.0.2.2:8000")
+BASE_URL = os.getenv("BASE_URL", "https://kurdish-ai-backend.onrender.com")
 document_buffer = ""
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
@@ -203,7 +203,6 @@ def detect_language(text: str):
 
 # ===================== NLLB TRANSLATION FUNCTION =====================
 def translate_text_openrouter(text: str, target_lang: str = 'ku'):
-    # لێرەدا ناوی زمانەکە لە لیستەکەت دەردەهێنین
     full_lang_name = LANG_NAMES.get(target_lang, "Kurdish Sorani")
     
     try:
@@ -211,31 +210,34 @@ def translate_text_openrouter(text: str, target_lang: str = 'ku'):
             url="https://openrouter.ai/api/v1/chat/completions",
             headers={
                 "Authorization": f"Bearer {os.getenv('OPENROUTER_API_KEY')}",
-                "HTTP-Referer": "http://localhost:8000", # ئەمە بۆ OpenRouter پێویستە
-                "X-Title": "Kurdish AI App",
+                "HTTP-Referer": "https://kurdish-ai-backend.onrender.com", # لێرە لێنکە نوێیەکەت دابنێ
+                "X-Title": "Kurdish AI",
             },
             json={
                 "model": "meta-llama/llama-3.3-70b-instruct", 
                 "messages": [
                     {
                         "role": "system", 
-                        "content": f"You are a professional translator. Translate the text to {full_lang_name}. "
-                                   "If the target is Kurdish, use Sorani dialect with natural, everyday vocabulary. "
-                                   "For example, 'trust' is 'متمانە' and 'sorry' is 'داوای لێبوردن'. "
-                                   "Do not use literal or invented words. Only provide the translated text."
+                        "content": f"You are a professional translator. Translate to {full_lang_name}. Only provide the translation."
                     },
                     {"role": "user", "content": text}
                 ],
-                "temperature": 0
-            }
+                "temperature": 0.1, # کەمکردنەوەی پلەی گەرمی بۆ خێرایی
+                "max_tokens": 1000 # دیاریکردنی سنور بۆ وەڵامدانەوە
+            },
+            timeout=25 # 🔒 گرنگ: پێش ئەوەی Render بپچڕێت، با Requests خۆی بوەستێت
         )
         
         result = response.json()
-        translated = result['choices'][0]['message']['content'].strip()
-        return {"success": True, "translated_text": translated}
-        
+        if 'choices' in result:
+            translated = result['choices'][0]['message']['content'].strip()
+            return {"success": True, "translated_text": translated}
+        else:
+            return {"success": False, "error": "Invalid response from OpenRouter"}
+            
+    except requests.exceptions.Timeout:
+        return {"success": False, "error": "OpenRouter timed out. Try a shorter text."}
     except Exception as e:
-        print(f"❌ OpenRouter Error: {str(e)}")
         return {"success": False, "error": str(e)}
     
     
