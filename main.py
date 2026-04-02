@@ -41,6 +41,7 @@ from db_config import (
 
 # 🔒 LOAD ENVIRONMENT VARIABLES
 load_dotenv()
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 app = FastAPI()
 
