@@ -2,28 +2,30 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from contextlib import contextmanager
 import os
-import hashlib
 from dotenv import load_dotenv
 
-# 🔒 LOAD ENVIRONMENT VARIABLES
 load_dotenv()
 
-# ✅ SECURE DATABASE CONFIG
-# Render بەزۆری DATABASE_URL بەکاردێنێت کە هەموو زانیارییەکانی تێدایە
-database_url = os.getenv("DATABASE_URL")
-
-# ✅ ئەم بەشە بگۆڕە بۆ ئەمە:
+# ✅ دڵنیابوون لەوەی لێنکەکە هەیە
 DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise ValueError("❌ DATABASE_URL نەدۆزرایەوە! تکایە لە Railway Variables دایبنێ.")
 
 @contextmanager
 def get_db():
-    """Get database connection using the full URL"""
-    # 🔗 لێرەدا ڕاستەوخۆ لێنکەکە بەکاردێنین
-    conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+    """بەستنەوە بە داتابەیس بە شێوەیەکی سەلامەت"""
+    conn = None
     try:
+        # 🔗 پەیوەندی کردن بە داتابەیس
+        conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
         yield conn
+    except psycopg2.OperationalError as e:
+        print(f"⚠️ هەڵەی پەیوەندی بە داتابەیس: {e}")
+        raise e  # بۆ ئەوەی بزانین کێشەکە چییە
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 
 def init_database():
