@@ -60,7 +60,7 @@ app.add_middleware(
 init_database()
 
 # 🔒 USE ENVIRONMENT VARIABLES
-BASE_URL = os.getenv("BASE_URL", "https://kurdish-ai-backend.onrender.com")
+BASE_URL = os.getenv("BASE_URL", "https://kurdish-ai-backend-production.up.railway.app")
 document_buffer = ""
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
