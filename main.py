@@ -687,8 +687,7 @@ def chat(request: Request, message: Message):
             os.makedirs("files", exist_ok=True)
             filename = f"files/presentation_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pptx"
             prs.save(filename)
-            just_filename = os.path.basename(filename)
-            file_url = f"/file/{just_filename}"
+            file_url = f"/file/{filename}"
             
             save_file(user_id, conversation_id, file_url, filename, "pptx")
             save_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
@@ -699,8 +698,7 @@ def chat(request: Request, message: Message):
         if "pdf" in lower:
             ai_content = generate_content_with_groq(user_text, num_items, "pdf", conversation_id, user_id)
             filename = generate_pdf_document(user_text, num_items, ai_content)
-            just_filename = os.path.basename(filename)
-            file_url = f"/file/{just_filename}"
+            file_url = f"/file/{filename}"
             
             save_file(user_id, conversation_id, file_url, filename, "pdf")
             save_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
@@ -711,8 +709,7 @@ def chat(request: Request, message: Message):
         if "word" in lower or "doc" in lower:
             ai_content = generate_content_with_groq(user_text, num_items, "word", conversation_id, user_id)
             filename = generate_word_document(user_text, num_items, ai_content)
-            just_filename = os.path.basename(filename)
-            file_url = f"/file/{just_filename}"
+            file_url = f"/file/{filename}"
             
             save_file(user_id, conversation_id, file_url, filename, "docx")
             save_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
@@ -731,7 +728,7 @@ def chat(request: Request, message: Message):
             filename=f"image_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
         )
         
-        image_url = f"/file/{filename}"
+        image_url = f"{BASE_URL}/file/{filename}"
         
         save_message(user_id, conversation_id, "user", user_text)
         save_message(user_id, conversation_id, "assistant", f"Generated image: {filename}")
