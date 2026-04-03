@@ -698,7 +698,7 @@ def chat(request: Request, message: Message):
             just_name = os.path.basename(filename)
             file_url = f"{BASE_URL}/file/{just_name}"
             
-            save_file(user_id, conversation_id, file_url, filename, "pptx")
+            save_file(user_id, conversation_id, file_url, just_name, "pptx")
             save_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
             
             return {"reply": file_url, "conversation_id": conversation_id}
@@ -710,7 +710,7 @@ def chat(request: Request, message: Message):
             just_name = os.path.basename(filename)
             file_url = f"{BASE_URL}/file/{just_name}"
             
-            save_file(user_id, conversation_id, file_url, filename, "pdf")
+            save_file(user_id, conversation_id, file_url, just_name, "pdf")
             save_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
             
             return {"reply": file_url, "conversation_id": conversation_id}
@@ -722,7 +722,7 @@ def chat(request: Request, message: Message):
             just_name = os.path.basename(filename)
             file_url = f"{BASE_URL}/file/{just_name}"
             
-            save_file(user_id, conversation_id, file_url, filename, "docx")
+            save_file(user_id, conversation_id, file_url, just_name, "docx")
             save_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
             
             return {"reply": file_url, "conversation_id": conversation_id}
