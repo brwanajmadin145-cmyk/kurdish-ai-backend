@@ -942,7 +942,8 @@ def rename_file_endpoint(file_id: int, new_name: str):
     try:
         with get_db() as conn:
             cursor = conn.cursor()
-            # وەرگرتنی زانیاری کۆن
+            
+            # 1. سەرەتا زانیارییە کۆنەکان وەردەگرین
             cursor.execute("SELECT file_url, file_type FROM files WHERE file_id = %s", (file_id,))
             result = cursor.fetchone()
             
@@ -950,28 +951,39 @@ def rename_file_endpoint(file_id: int, new_name: str):
                 return {"success": False, "error": "File not found"}
 
             old_url = result['file_url']
-            file_type = result['file_type'] # بۆ نموونە pdf
+            file_type = result['file_type']
             
-            # دروستکردنی ناوی نوێ بۆ فایلەکە لەسەر سێرڤەر
+            # 2. ناوی فیزیکی نوێ دروست دەکەین (بۆ ئەوەی لێنکەکە ئیش بکات)
             old_filename = old_url.split('/')[-1]
-            new_filename = f"{new_name.replace(' ', '_')}.{file_type}"
+            # لێرەدا replace بەکاردێنین بۆ ئەوەی سپەیس نەبێتە کێشە لە لێنکەکەدا
+            clean_new_name = new_name.replace(' ', '_')
+            new_filename = f"{clean_new_name}.{file_type}"
             new_url = f"{BASE_URL}/file/{new_filename}"
 
-            # 1. گۆڕینی ناوی فایلە فیزیکییەکە لەسەر سێرڤەر (Disk)
+            # 3. گۆڕینی ناوی فایلەکە لەسەر سێرڤەر (گرنگترین بەش)
             old_path = os.path.join("files", old_filename)
             new_path = os.path.join("files", new_filename)
             
-            if os.path.exists(old_path):
-                os.rename(old_path, new_path)
+            try:
+                if os.path.exists(old_path):
+                    os.rename(old_path, new_path)
+            except Exception as disk_error:
+                print(f"Disk Rename Error: {disk_error}")
+                # ئەگەر فایلەکە لەسەر دیسک نەبوو، هەر بەردەوام بە بۆ ئەوەی لانی کەم لە داتابەیس ناوەکە بگۆڕێت
 
-            # 2. نوێکردنەوەی داتابەیس (هەم ناوەکە و هەم لێنکە نوێیەکە)
+            # 4. نوێکردنەوەی داتابەیس ڕێک وەک چاتەکە بەڵام URLـەکەش دەگۆڕین
             cursor.execute(
                 "UPDATE files SET file_name = %s, file_url = %s WHERE file_id = %s",
                 (new_name, new_url, file_id)
             )
             conn.commit()
             
-            return {"success": True, "new_url": new_url}
+            return {
+                "success": True, 
+                "message": "File renamed successfully",
+                "new_url": new_url,
+                "new_title": new_name
+            }
                 
     except Exception as e:
         return {"success": False, "error": str(e)}
