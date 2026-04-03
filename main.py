@@ -909,32 +909,26 @@ def delete_file_endpoint(file_id: int):
     try:
         with get_db() as conn:
             cursor = conn.cursor()
-            # 🌟 وەرگرتنی file_url بۆ ئەوەی بزانین چ فایلێکە
             cursor.execute("SELECT file_url FROM files WHERE file_id = %s", (file_id,))
             result = cursor.fetchone()
             
             if result:
                 file_url = result['file_url']
                 
-                # 1. سڕینەوە لە داتابەیس (هەمیشە دەبێت یەکەمجار بێت)
+                # 1. سڕینەوە لە داتابەیس
                 cursor.execute("DELETE FROM files WHERE file_id = %s", (file_id,))
                 conn.commit()
                 
-                # 2. سڕینەوە لەسەر دیسک
-                try:
-                    # تەنها ناوی فایلەکە وەردەگرین و هەموو سلاشەکان لادەبەین
-                    filename = file_url.split('/')[-1]
-                    # بەکارهێنانی Absolute Path بۆ ئەوەی Railway تێکنەچێت
-                    base_dir = os.path.dirname(os.path.abspath(__file__))
-                    filepath = os.path.join(base_dir, "files", filename)
-                    
-                    if os.path.exists(filepath):
-                        os.remove(filepath)
-                except Exception as e:
-                    print(f"Disk Error: {e}")
+                # 2. سڕینەوەی فیزیکی
+                filename = file_url.split('/')[-1]
+                base_dir = os.path.dirname(os.path.abspath(__file__))
+                filepath = os.path.join(base_dir, "files", filename)
                 
-                return {"success": True, "message": "File deleted"}
-            return {"success": False, "error": "File not found"}
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+                
+                return {"success": True}
+            return {"success": False, "error": "Not found"}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -953,22 +947,22 @@ def rename_file_endpoint(file_id: int, new_name: str):
             old_url = result['file_url']
             file_type = result['file_type']
             
-            # پاککردنەوەی ناوە نوێیەکە بۆ URL
             old_filename = old_url.split('/')[-1]
-            clean_new_name = new_name.replace(' ', '_').replace('.', '_')
+            clean_new_name = new_name.replace(' ', '_')
             new_filename = f"{clean_new_name}.{file_type}"
-            
-            # دڵنیابوونەوە لەوەی BASE_URL سلاشی زیادەی نییە
-            stripped_base = BASE_URL.rstrip('/')
-            new_url = f"{stripped_base}/file/{new_filename}"
+            new_url = f"{BASE_URL}/file/{new_filename}"
 
-            # گۆڕین لەسەر دیسک
+            # ناونیشانی فایلەکان
             base_dir = os.path.dirname(os.path.abspath(__file__))
             old_path = os.path.join(base_dir, "files", old_filename)
             new_path = os.path.join(base_dir, "files", new_filename)
             
+            # 🌟 فێڵە لێرەدایە:
             if os.path.exists(old_path):
-                os.rename(old_path, new_path)
+                # لە جیاتی rename، ئێمە copy دەکەین
+                # بەمە هەم لێنکە کۆنەکە (ناو فڵەتەر) کار دەکات، هەم لێنکە نوێیەکە
+                import shutil
+                shutil.copy2(old_path, new_path)
 
             # نوێکردنەوەی داتابەیس
             cursor.execute(
@@ -977,13 +971,11 @@ def rename_file_endpoint(file_id: int, new_name: str):
             )
             conn.commit()
             
-            return {
-                "success": True, 
-                "new_url": new_url,
-                "new_title": new_name
-            }
+            return {"success": True, "new_url": new_url, "new_title": new_name}
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+
 # ===================== SUBMIT FEEDBACK =====================
 @app.post("/feedback")
 def submit_feedback(request: FeedbackRequest):
