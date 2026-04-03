@@ -905,64 +905,76 @@ def rename_conversation_endpoint(conversation_id: int, new_title: str):
 # ===================== DELETE FILE =====================
 @app.delete("/file/{file_id}")
 def delete_file_endpoint(file_id: int):
-    """Delete a file from database and disk"""
     try:
         with get_db() as conn:
             cursor = conn.cursor()
-            cursor.execute(
-                "SELECT file_url, file_name FROM files WHERE file_id = %s",
-                (file_id,)
-            )
+            cursor.execute("SELECT file_url FROM files WHERE file_id = %s", (file_id,))
             result = cursor.fetchone()
             
             if result:
                 file_url = result['file_url']
                 
-                # Delete from database
+                # 1. سڕینەوە لە داتابەیس (ئەمە هەمیشە کار دەکات)
                 cursor.execute("DELETE FROM files WHERE file_id = %s", (file_id,))
                 conn.commit()
                 
-                # Try to delete physical file
+                # 2. سڕینەوەی فایلی فیزیکی لەسەر Railway
                 try:
-                    if 'files/' in file_url:
-                        filepath = file_url.split('/file/')[-1]
-                        if os.path.exists(filepath):
-                            os.remove(filepath)
+                    # لێرەدا تەنها ناوی فایلەکە وەردەگرین
+                    filename = file_url.split('/')[-1]
+                    # ناونیشانی ڕاستەقینە لەسەر سێرڤەر: files/filename.pdf
+                    filepath = os.path.join("files", filename)
+                    
+                    if os.path.exists(filepath):
+                        os.remove(filepath)
+                        print(f"✅ File {filepath} deleted from disk")
                 except Exception as e:
                     print(f"⚠️ Could not delete physical file: {e}")
                 
-                cursor.close()
                 return {"success": True, "message": "File deleted successfully"}
-            else:
-                cursor.close()
-                return {"success": False, "error": "File not found"}
+            return {"success": False, "error": "File not found"}
                 
     except Exception as e:
         return {"success": False, "error": str(e)}
-
 # ===================== RENAME FILE =====================
 @app.put("/file/{file_id}/rename")
 def rename_file_endpoint(file_id: int, new_name: str):
-    """Rename a file in database"""
     try:
         with get_db() as conn:
             cursor = conn.cursor()
-            cursor.execute(
-                "UPDATE files SET file_name = %s WHERE file_id = %s",
-                (new_name, file_id)
-            )
+            # وەرگرتنی زانیاری کۆن
+            cursor.execute("SELECT file_url, file_type FROM files WHERE file_id = %s", (file_id,))
+            result = cursor.fetchone()
             
-            if cursor.rowcount > 0:
-                conn.commit()
-                cursor.close()
-                return {"success": True, "message": "File renamed successfully"}
-            else:
-                cursor.close()
+            if not result:
                 return {"success": False, "error": "File not found"}
+
+            old_url = result['file_url']
+            file_type = result['file_type'] # بۆ نموونە pdf
+            
+            # دروستکردنی ناوی نوێ بۆ فایلەکە لەسەر سێرڤەر
+            old_filename = old_url.split('/')[-1]
+            new_filename = f"{new_name.replace(' ', '_')}.{file_type}"
+            new_url = f"{BASE_URL}/file/{new_filename}"
+
+            # 1. گۆڕینی ناوی فایلە فیزیکییەکە لەسەر سێرڤەر (Disk)
+            old_path = os.path.join("files", old_filename)
+            new_path = os.path.join("files", new_filename)
+            
+            if os.path.exists(old_path):
+                os.rename(old_path, new_path)
+
+            # 2. نوێکردنەوەی داتابەیس (هەم ناوەکە و هەم لێنکە نوێیەکە)
+            cursor.execute(
+                "UPDATE files SET file_name = %s, file_url = %s WHERE file_id = %s",
+                (new_name, new_url, file_id)
+            )
+            conn.commit()
+            
+            return {"success": True, "new_url": new_url}
                 
     except Exception as e:
         return {"success": False, "error": str(e)}
-
 # ===================== SUBMIT FEEDBACK =====================
 @app.post("/feedback")
 def submit_feedback(request: FeedbackRequest):
