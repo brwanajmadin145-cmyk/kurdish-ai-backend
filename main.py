@@ -1293,24 +1293,25 @@ def rename_privacy_conversation(conversation_id: int, new_title: str):
         return {"success": False, "error": str(e)}
 
 
-@app.post("/privacy/rename_file/{file_id}") # 👈 ناوی ڕێڕەوەکەمان گۆڕی بۆ ئەوەی 405 نەدات
-def rename_file_endpoint(file_id: int, new_name: str):
+@app.post("/privacy/rename_file/{file_id}")
+def rename_privacy_file_endpoint(file_id: int, new_name: str):
     try:
         with get_db() as conn:
             cursor = conn.cursor()
-            cursor.execute("UPDATE files SET file_name = %s WHERE file_id = %s", (new_name, file_id))
+            # 👈 لێرە دەبێت بنووسرێت privacy_files
+            cursor.execute("UPDATE privacy_files SET file_name = %s WHERE file_id = %s", (new_name, file_id))
             conn.commit()
             return {"success": True}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-# 2. بەشی Delete
-@app.post("/privacy/delete_file/{file_id}") # 👈 لێرەش ناوی ڕێڕەوەکەمان گۆڕی
-def delete_file_endpoint(file_id: int):
+@app.post("/privacy/delete_file/{file_id}")
+def delete_privacy_file_endpoint(file_id: int):
     try:
         with get_db() as conn:
             cursor = conn.cursor()
-            cursor.execute("DELETE FROM files WHERE file_id = %s", (file_id,))
+            # 👈 لێرەش دەبێت بنووسرێت privacy_files
+            cursor.execute("DELETE FROM privacy_files WHERE file_id = %s", (file_id,))
             conn.commit()
             return {"success": True}
     except Exception as e:
