@@ -2,6 +2,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from contextlib import contextmanager
 import os
+import hashlib
 from dotenv import load_dotenv
 
 load_dotenv()
