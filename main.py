@@ -902,45 +902,29 @@ def rename_conversation_endpoint(conversation_id: int, new_title: str):
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@app.post("/file/{file_id}/delete")
-def delete_file_endpoint(file_id: int):
-    try:
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT file_url FROM files WHERE file_id = %s", (file_id,))
-            result = cursor.fetchone()
-            if result:
-                file_url = result['file_url']
-                # یەکەمجار لە داتابەیس دەیسڕینەوە
-                cursor.execute("DELETE FROM files WHERE file_id = %s", (file_id,))
-                conn.commit()
-                # پاشان لەسەر دیسک
-                filename = file_url.split('/')[-1]
-                filepath = os.path.join("files", filename)
-                if os.path.exists(filepath):
-                    os.remove(filepath)
-                return {"success": True}
-            return {"success": False, "error": "Not found"}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
-
-# ===================== RENAME FILE =====================
-@app.post("/file/{file_id}/rename")
+# 1. بەشی Rename
+@app.post("/rename_file/{file_id}") # 👈 ناوی ڕێڕەوەکەمان گۆڕی بۆ ئەوەی 405 نەدات
 def rename_file_endpoint(file_id: int, new_name: str):
     try:
         with get_db() as conn:
             cursor = conn.cursor()
-            # 🌟 تەنها ناوی پیشاندان (file_name) دەگۆڕین
-            # file_url ناگۆڕین بۆ ئەوەی فڵەتەر 404 نەدات
-            cursor.execute(
-                "UPDATE files SET file_name = %s WHERE file_id = %s",
-                (new_name, file_id)
-            )
+            cursor.execute("UPDATE files SET file_name = %s WHERE file_id = %s", (new_name, file_id))
             conn.commit()
-            return {"success": True, "new_title": new_name}
+            return {"success": True}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
+# 2. بەشی Delete
+@app.post("/delete_file/{file_id}") # 👈 لێرەش ناوی ڕێڕەوەکەمان گۆڕی
+def delete_file_endpoint(file_id: int):
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM files WHERE file_id = %s", (file_id,))
+            conn.commit()
+            return {"success": True}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 # ===================== SUBMIT FEEDBACK =====================
 @app.post("/feedback")
