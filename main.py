@@ -1071,57 +1071,60 @@ def privacy_chat(request: Request, message: Message):
         save_privacy_message(user_id, conversation_id, "assistant", reply)
         return {"reply": reply, "conversation_id": conversation_id}
     
-    # ===== DOCUMENT GENERATION =====
-    if intent == "document":
-        save_privacy_message(user_id, conversation_id, "user", user_text)
+if intent == "document":
+    # ✅ بەکارهێنانی میسۆدی تایبەت بە Privacy بۆ خەزنکردنی نامەی بەکارهێنەر
+    save_privacy_message(user_id, conversation_id, "user", user_text)
+    
+    lower = user_text.lower()
+    
+    # Extract number (default 5)
+    num_match = re.search(r'(\d+)\s*(slide|page|slides|pages)', lower)
+    num_items = int(num_match.group(1)) if num_match else 5
+    
+    # 🔥 POWERPOINT
+    if any(kw in lower for kw in ["ppt", "powerpoint", "presentation", "slides"]):
+        ai_content = generate_content_with_groq(user_text, num_items, "presentation", conversation_id, user_id)
+        prs = generate_gamma_presentation(user_text, num_items, 'modern', ai_content)
         
-        lower = user_text.lower()
+        os.makedirs("files", exist_ok=True)
+        filename = f"files/presentation_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pptx"
+        prs.save(filename)
+        just_name = os.path.basename(filename)
+        file_url = f"{BASE_URL}/file/{just_name}"
         
-        # Extract number (default 5)
-        num_match = re.search(r'(\d+)\s*(slide|page|slides|pages)', lower)
-        num_items = int(num_match.group(1)) if num_match else 5
+        # ✅ لێرە دەبێت save_privacy_file بێت
+        save_privacy_file(user_id, conversation_id, file_url, just_name, "pptx")
+        save_privacy_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
         
-        # 🔥 POWERPOINT
-        if "ppt" in lower or "powerpoint" in lower or "presentation" in lower or "slides" in lower:
-            ai_content = generate_content_with_groq(user_text, num_items, "presentation", conversation_id, user_id)
-            prs = generate_gamma_presentation(user_text, num_items, 'modern', ai_content)
-            
-            os.makedirs("files", exist_ok=True)
-            filename = f"files/presentation_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pptx"
-            prs.save(filename)
-            just_name = os.path.basename(filename)
-            file_url = f"{BASE_URL}/file/{just_name}"
-            
-            save_privacy_file(user_id, conversation_id, file_url, just_name, "pptx")
-            save_privacy_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
-            
-            return {"reply": file_url, "conversation_id": conversation_id}
+        return {"reply": file_url, "conversation_id": conversation_id}
+    
+    # 🔥 PDF
+    if "pdf" in lower:
+        ai_content = generate_content_with_groq(user_text, num_items, "pdf", conversation_id, user_id)
+        filename = generate_pdf_document(user_text, num_items, ai_content)
+        just_name = os.path.basename(filename)
+        file_url = f"{BASE_URL}/file/{just_name}"
         
-        # 🔥 PDF
-        if "pdf" in lower:
-            ai_content = generate_content_with_groq(user_text, num_items, "pdf", conversation_id, user_id)
-            filename = generate_pdf_document(user_text, num_items, ai_content)
-            just_name = os.path.basename(filename)
-            file_url = f"{BASE_URL}/file/{just_name}"
-            
-            save_privacy_file(user_id, conversation_id, file_url, just_name, "pdf")
-            save_privacy_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
-            
-            return {"reply": file_url, "conversation_id": conversation_id}
+        # ✅ خەزنکردنی وەک فایلی پارێزراو
+        save_privacy_file(user_id, conversation_id, file_url, just_name, "pdf")
+        save_privacy_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
         
-        # 🔥 WORD
-        if "word" in lower or "doc" in lower:
-            ai_content = generate_content_with_groq(user_text, num_items, "word", conversation_id, user_id)
-            filename = generate_word_document(user_text, num_items, ai_content)
-            just_name = os.path.basename(filename)
-            file_url = f"{BASE_URL}/file/{just_name}"
-            
-            save_privacy_file(user_id, conversation_id, file_url, just_name, "docx")
-            save_privacy_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
-            
-            return {"reply": file_url, "conversation_id": conversation_id}
+        return {"reply": file_url, "conversation_id": conversation_id}
+    
+    # 🔥 WORD
+    if "word" in lower or "doc" in lower:
+        ai_content = generate_content_with_groq(user_text, num_items, "word", conversation_id, user_id)
+        filename = generate_word_document(user_text, num_items, ai_content)
+        just_name = os.path.basename(filename)
+        file_url = f"{BASE_URL}/file/{just_name}"
         
-        return {"reply": "Please specify document type: pdf, word, or powerpoint", "conversation_id": conversation_id}
+        # ✅ خەزنکردنی وەک فایلی پارێزراو
+        save_privacy_file(user_id, conversation_id, file_url, just_name, "docx")
+        save_privacy_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
+        
+        return {"reply": file_url, "conversation_id": conversation_id}
+    
+    return {"reply": "تکایە جۆری فایلەکە دیاری بکە: PDF, Word, یان PowerPoint", "conversation_id": conversation_id}
     
     # ===== IMAGE GENERATION =====
     # ===== IMAGE GENERATION =====
