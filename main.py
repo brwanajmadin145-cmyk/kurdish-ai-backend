@@ -1293,7 +1293,7 @@ def rename_privacy_conversation(conversation_id: int, new_title: str):
         return {"success": False, "error": str(e)}
 
 
-@app.post("/rename_file/{file_id}") # 👈 ناوی ڕێڕەوەکەمان گۆڕی بۆ ئەوەی 405 نەدات
+@app.post("/privacy/rename_file/{file_id}") # 👈 ناوی ڕێڕەوەکەمان گۆڕی بۆ ئەوەی 405 نەدات
 def rename_file_endpoint(file_id: int, new_name: str):
     try:
         with get_db() as conn:
@@ -1305,7 +1305,7 @@ def rename_file_endpoint(file_id: int, new_name: str):
         return {"success": False, "error": str(e)}
 
 # 2. بەشی Delete
-@app.post("/delete_file/{file_id}") # 👈 لێرەش ناوی ڕێڕەوەکەمان گۆڕی
+@app.post("/privacy/delete_file/{file_id}") # 👈 لێرەش ناوی ڕێڕەوەکەمان گۆڕی
 def delete_file_endpoint(file_id: int):
     try:
         with get_db() as conn:
