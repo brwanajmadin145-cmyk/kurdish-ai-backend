@@ -743,7 +743,8 @@ def chat(request: Request, message: Message):
         image_url = f"{BASE_URL}/file/{just_image_name}"
         
         save_message(user_id, conversation_id, "user", user_text)
-        save_message(user_id, conversation_id, "assistant", f"Generated image: {filename}")
+        just_image_name = os.path.basename(filename)
+        save_message(user_id, conversation_id, "assistant", f"Generated image: {just_image_name}")
         save_image(user_id, conversation_id, image_url, user_text, "generated")
         
         return {
