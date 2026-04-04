@@ -902,7 +902,7 @@ def rename_conversation_endpoint(conversation_id: int, new_title: str):
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@app.delete("/file/{file_id}")
+@app.post("/file/{file_id}/delete")
 def delete_file_endpoint(file_id: int):
     try:
         with get_db() as conn:
@@ -925,7 +925,7 @@ def delete_file_endpoint(file_id: int):
         return {"success": False, "error": str(e)}
 
 # ===================== RENAME FILE =====================
-@app.put("/file/{file_id}/rename")
+@app.post("/file/{file_id}/rename")
 def rename_file_endpoint(file_id: int, new_name: str):
     try:
         with get_db() as conn:
