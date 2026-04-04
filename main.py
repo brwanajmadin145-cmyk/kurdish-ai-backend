@@ -1073,13 +1073,15 @@ def privacy_chat(request: Request, message: Message):
     
     # ===== DOCUMENT GENERATION =====
     if intent == "document":
-        save_privacy_message(user_id, conversation_id, "user", user_text)
+        save_message(user_id, conversation_id, "user", user_text)
         
         lower = user_text.lower()
+        
+        # Extract number (default 5)
         num_match = re.search(r'(\d+)\s*(slide|page|slides|pages)', lower)
         num_items = int(num_match.group(1)) if num_match else 5
         
-        # POWERPOINT
+        # 🔥 POWERPOINT
         if "ppt" in lower or "powerpoint" in lower or "presentation" in lower or "slides" in lower:
             ai_content = generate_content_with_groq(user_text, num_items, "presentation", conversation_id, user_id)
             prs = generate_gamma_presentation(user_text, num_items, 'modern', ai_content)
@@ -1087,37 +1089,43 @@ def privacy_chat(request: Request, message: Message):
             os.makedirs("files", exist_ok=True)
             filename = f"files/presentation_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pptx"
             prs.save(filename)
-            file_url = f"/file/{filename}"
+            just_name = os.path.basename(filename)
+            file_url = f"{BASE_URL}/file/{just_name}"
             
-            save_privacy_file(user_id, conversation_id, file_url, filename, "pptx")
-            save_privacy_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
+            save_file(user_id, conversation_id, file_url, just_name, "pptx")
+            save_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
             
             return {"reply": file_url, "conversation_id": conversation_id}
         
-        # PDF
+        # 🔥 PDF
         if "pdf" in lower:
             ai_content = generate_content_with_groq(user_text, num_items, "pdf", conversation_id, user_id)
             filename = generate_pdf_document(user_text, num_items, ai_content)
-            file_url = f"/file/{filename}"
+            just_name = os.path.basename(filename)
+            file_url = f"{BASE_URL}/file/{just_name}"
             
-            save_privacy_file(user_id, conversation_id, file_url, filename, "pdf")
-            save_privacy_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
+            save_file(user_id, conversation_id, file_url, just_name, "pdf")
+            save_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
             
             return {"reply": file_url, "conversation_id": conversation_id}
         
-        # WORD
+        # 🔥 WORD
         if "word" in lower or "doc" in lower:
             ai_content = generate_content_with_groq(user_text, num_items, "word", conversation_id, user_id)
             filename = generate_word_document(user_text, num_items, ai_content)
-            file_url = f"/file/{filename}"
+            just_name = os.path.basename(filename)
+            file_url = f"{BASE_URL}/file/{just_name}"
             
-            save_privacy_file(user_id, conversation_id, file_url, filename, "docx")
-            save_privacy_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
+            save_file(user_id, conversation_id, file_url, just_name, "docx")
+            save_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
             
             return {"reply": file_url, "conversation_id": conversation_id}
         
         return {"reply": "Please specify document type: pdf, word, or powerpoint", "conversation_id": conversation_id}
     
+    # ===== IMAGE GENERATION =====
+    # ===== IMAGE GENERATION =====
+    # ===== IMAGE GENERATION =====
     # ===== IMAGE GENERATION =====
     if intent == "image_generate":
         filename = generate_image(
@@ -1125,11 +1133,13 @@ def privacy_chat(request: Request, message: Message):
             filename=f"image_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
         )
         
-        image_url = f"{BASE_URL}/file/{filename}"
+        just_image_name = os.path.basename(filename)
+        image_url = f"{BASE_URL}/file/{just_image_name}"
         
-        save_privacy_message(user_id, conversation_id, "user", user_text)
-        save_privacy_message(user_id, conversation_id, "assistant", f"Generated image: {filename}")
-        save_privacy_image(user_id, conversation_id, image_url, user_text, "generated")
+        save_message(user_id, conversation_id, "user", user_text)
+        just_image_name = os.path.basename(filename)
+        save_message(user_id, conversation_id, "assistant", f"Generated image: {just_image_name}")
+        save_image(user_id, conversation_id, image_url, user_text, "generated")
         
         return {
             "type": "image",
@@ -1283,37 +1293,26 @@ def rename_privacy_conversation(conversation_id: int, new_title: str):
         return {"success": False, "error": str(e)}
 
 
-# Delete privacy file
-@app.delete("/privacy/file/{file_id}")
-def delete_privacy_file(file_id: int):
-    """Delete a privacy file"""
+@app.post("/rename_file/{file_id}") # 👈 ناوی ڕێڕەوەکەمان گۆڕی بۆ ئەوەی 405 نەدات
+def rename_file_endpoint(file_id: int, new_name: str):
     try:
         with get_db() as conn:
             cursor = conn.cursor()
-            cursor.execute("DELETE FROM privacy_files WHERE file_id = %s", (file_id,))
+            cursor.execute("UPDATE files SET file_name = %s WHERE file_id = %s", (new_name, file_id))
             conn.commit()
-            cursor.close()
-        
-        return {"success": True}
+            return {"success": True}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-
-# Rename privacy file
-@app.put("/privacy/file/{file_id}/rename")
-def rename_privacy_file(file_id: int, new_name: str):
-    """Rename a privacy file"""
+# 2. بەشی Delete
+@app.post("/delete_file/{file_id}") # 👈 لێرەش ناوی ڕێڕەوەکەمان گۆڕی
+def delete_file_endpoint(file_id: int):
     try:
         with get_db() as conn:
             cursor = conn.cursor()
-            cursor.execute(
-                "UPDATE privacy_files SET file_name = %s WHERE file_id = %s",
-                (new_name, file_id)
-            )
+            cursor.execute("DELETE FROM files WHERE file_id = %s", (file_id,))
             conn.commit()
-            cursor.close()
-        
-        return {"success": True}
+            return {"success": True}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
