@@ -1065,49 +1065,56 @@ def privacy_chat(request: Request, message: Message):
         return {"reply": reply, "conversation_id": conversation_id}
     
     # ===== IDENTITY =====
-    if intent == "identity":
-        lang = detect_language(user_text)
-        reply = IDENTITY_RESPONSES.get(lang, IDENTITY_RESPONSES['en'])
-        save_privacy_message(user_id, conversation_id, "user", user_text)
-        save_privacy_message(user_id, conversation_id, "assistant", reply)
-        return {"reply": reply, "conversation_id": conversation_id}
-    
-if intent == "document":
-    save_privacy_message(user_id, conversation_id, "user", user_text)
-    lower = user_text.lower()
-    num_match = re.search(r'(\d+)\s*(slide|page|slides|pages)', lower)
-    num_items = int(num_match.group(1)) if num_match else 5
-    if any(kw in lower for kw in ["ppt", "powerpoint", "presentation", "slides"]):
-        ai_content = generate_content_with_groq(user_text, num_items, "presentation", conversation_id, user_id)
-        prs = generate_gamma_presentation(user_text, num_items, 'modern', ai_content)
-        os.makedirs("files", exist_ok=True)
-        filename = f"files/presentation_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pptx"
-        prs.save(filename)
-        just_name = os.path.basename(filename)
-        file_url = f"{BASE_URL}/file/{just_name}"
-        save_privacy_file(user_id, conversation_id, file_url, just_name, "pptx")
-        save_privacy_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
-        return {"reply": file_url, "conversation_id": conversation_id}
-
-    if "pdf" in lower:
-        ai_content = generate_content_with_groq(user_text, num_items, "pdf", conversation_id, user_id)
-        filename = generate_pdf_document(user_text, num_items, ai_content)
-        just_name = os.path.basename(filename)
-        file_url = f"{BASE_URL}/file/{just_name}"
-        save_privacy_file(user_id, conversation_id, file_url, just_name, "pdf")
-        save_privacy_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
-        return {"reply": file_url, "conversation_id": conversation_id}
-
-    if "word" in lower or "doc" in lower:
-        ai_content = generate_content_with_groq(user_text, num_items, "word", conversation_id, user_id)
-        filename = generate_word_document(user_text, num_items, ai_content)
-        just_name = os.path.basename(filename)
-        file_url = f"{BASE_URL}/file/{just_name}"
-        save_privacy_file(user_id, conversation_id, file_url, just_name, "docx")
-        save_privacy_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
-        return {"reply": file_url, "conversation_id": conversation_id}
-
-    return {"reply": "تکایە جۆری فایلەکە دیاری بکە: PDF, Word, یان PowerPoint", "conversation_id": conversation_id}
+    if intent == "document":
+        save_message(user_id, conversation_id, "user", user_text)
+        
+        lower = user_text.lower()
+        
+        # Extract number (default 5)
+        num_match = re.search(r'(\d+)\s*(slide|page|slides|pages)', lower)
+        num_items = int(num_match.group(1)) if num_match else 5
+        
+        # 🔥 POWERPOINT
+        if "ppt" in lower or "powerpoint" in lower or "presentation" in lower or "slides" in lower:
+            ai_content = generate_content_with_groq(user_text, num_items, "presentation", conversation_id, user_id)
+            prs = generate_gamma_presentation(user_text, num_items, 'modern', ai_content)
+            
+            os.makedirs("files", exist_ok=True)
+            filename = f"files/presentation_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pptx"
+            prs.save(filename)
+            just_name = os.path.basename(filename)
+            file_url = f"{BASE_URL}/file/{just_name}"
+            
+            save_file(user_id, conversation_id, file_url, just_name, "pptx")
+            save_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
+            
+            return {"reply": file_url, "conversation_id": conversation_id}
+        
+        # 🔥 PDF
+        if "pdf" in lower:
+            ai_content = generate_content_with_groq(user_text, num_items, "pdf", conversation_id, user_id)
+            filename = generate_pdf_document(user_text, num_items, ai_content)
+            just_name = os.path.basename(filename)
+            file_url = f"{BASE_URL}/file/{just_name}"
+            
+            save_file(user_id, conversation_id, file_url, just_name, "pdf")
+            save_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
+            
+            return {"reply": file_url, "conversation_id": conversation_id}
+        
+        # 🔥 WORD
+        if "word" in lower or "doc" in lower:
+            ai_content = generate_content_with_groq(user_text, num_items, "word", conversation_id, user_id)
+            filename = generate_word_document(user_text, num_items, ai_content)
+            just_name = os.path.basename(filename)
+            file_url = f"{BASE_URL}/file/{just_name}"
+            
+            save_file(user_id, conversation_id, file_url, just_name, "docx")
+            save_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
+            
+            return {"reply": file_url, "conversation_id": conversation_id}
+        
+        return {"reply": "Please specify document type: pdf, word, or powerpoint", "conversation_id": conversation_id}
     
     # ===== IMAGE GENERATION =====
     # ===== IMAGE GENERATION =====
@@ -1122,10 +1129,10 @@ if intent == "document":
         just_image_name = os.path.basename(filename)
         image_url = f"{BASE_URL}/file/{just_image_name}"
         
-        save_privacy_message(user_id, conversation_id, "user", user_text)
+        save_message(user_id, conversation_id, "user", user_text)
         just_image_name = os.path.basename(filename)
-        save_privacy_message(user_id, conversation_id, "assistant", f"Generated image: {just_image_name}")
-        save_privacy_image(user_id, conversation_id, image_url, user_text, "generated")
+        save_message(user_id, conversation_id, "assistant", f"Generated image: {just_image_name}")
+        save_image(user_id, conversation_id, image_url, user_text, "generated")
         
         return {
             "type": "image",
