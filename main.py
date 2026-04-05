@@ -1109,8 +1109,8 @@ def privacy_chat(request: Request, message: Message):
             just_name = os.path.basename(filename)
             file_url = f"{BASE_URL}/file/{just_name}"
             
-            save_file(user_id, conversation_id, file_url, just_name, "docx")
-            save_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
+            save_privacy_file(user_id, conversation_id, file_url, just_name, "docx")
+            save_privacy_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
             
             return {"reply": file_url, "conversation_id": conversation_id}
         
@@ -1291,25 +1291,37 @@ def rename_privacy_file_endpoint(file_id: int, new_name: str):
     try:
         with get_db() as conn:
             cursor = conn.cursor()
-            # 👈 لێرە دەبێت بنووسرێت privacy_files
             cursor.execute("UPDATE privacy_files SET file_name = %s WHERE file_id = %s", (new_name, file_id))
             conn.commit()
+            
+            if cursor.rowcount == 0: # ئەگەر هیچ ڕیزێک نەگۆڕدرا بوو
+                return {"success": False, "error": "File ID not found in privacy_files"}
+                
             return {"success": True}
     except Exception as e:
         return {"success": False, "error": str(e)}
+
 
 @app.post("/privacy/delete_file/{file_id}")
 def delete_privacy_file_endpoint(file_id: int):
     try:
         with get_db() as conn:
             cursor = conn.cursor()
-            # 👈 لێرەش دەبێت بنووسرێت privacy_files
+            
+            # 1. فەرمانی سڕینەوە لە خشتەی privacy_files
             cursor.execute("DELETE FROM privacy_files WHERE file_id = %s", (file_id,))
             conn.commit()
+            
+            # 2. پشکنین: ئایا هیچ ڕیزێک سڕاوەتەوە؟
+            if cursor.rowcount == 0:
+                # ئەگەر rowcount سفر بێت، واتە ئەو IDـیە لە داتابەیسەکەدا نییە
+                return {"success": False, "error": "فایلەکە نەدۆزرایەوە لەناو فایلی تایبەتدا"}
+            
+            cursor.close()
             return {"success": True}
+            
     except Exception as e:
         return {"success": False, "error": str(e)}
-
 
 
 # ===================== ADMIN: VIEW ALL FEEDBACK (PASSWORD PROTECTED) =====================
