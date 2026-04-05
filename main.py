@@ -1066,7 +1066,7 @@ def privacy_chat(request: Request, message: Message):
     
     # ===== IDENTITY =====
     if intent == "document":
-        save_message(user_id, conversation_id, "user", user_text)
+        save_privacy_message(user_id, conversation_id, "user", user_text)
         
         lower = user_text.lower()
         
@@ -1085,8 +1085,8 @@ def privacy_chat(request: Request, message: Message):
             just_name = os.path.basename(filename)
             file_url = f"{BASE_URL}/file/{just_name}"
             
-            save_file(user_id, conversation_id, file_url, just_name, "pptx")
-            save_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
+            save_privacy_file(user_id, conversation_id, file_url, just_name, "pptx")
+            save_privacy_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
             
             return {"reply": file_url, "conversation_id": conversation_id}
         
@@ -1097,8 +1097,8 @@ def privacy_chat(request: Request, message: Message):
             just_name = os.path.basename(filename)
             file_url = f"{BASE_URL}/file/{just_name}"
             
-            save_file(user_id, conversation_id, file_url, just_name, "pdf")
-            save_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
+            save_privacy_file(user_id, conversation_id, file_url, just_name, "pdf")
+            save_privacy_message(user_id, conversation_id, "assistant", f"FILE:{file_url}")
             
             return {"reply": file_url, "conversation_id": conversation_id}
         
@@ -1129,10 +1129,10 @@ def privacy_chat(request: Request, message: Message):
         just_image_name = os.path.basename(filename)
         image_url = f"{BASE_URL}/file/{just_image_name}"
         
-        save_message(user_id, conversation_id, "user", user_text)
+        save_privacy_message(user_id, conversation_id, "user", user_text)
         just_image_name = os.path.basename(filename)
-        save_message(user_id, conversation_id, "assistant", f"Generated image: {just_image_name}")
-        save_image(user_id, conversation_id, image_url, user_text, "generated")
+        save_privacy_message(user_id, conversation_id, "assistant", f"Generated image: {just_image_name}")
+        save_privacy_image(user_id, conversation_id, image_url, user_text, "generated")
         
         return {
             "type": "image",
