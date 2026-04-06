@@ -74,12 +74,17 @@ BASE_URL = os.getenv("BASE_URL", "https://kurdish-ai-backend-production.up.railw
 document_buffer = ""
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# ===================== TESSERACT OCR SETUP =====================
-# لە جیاتی ئەو دێڕەی سەرەوە، ئەمە دابنێ:
-if os.name == 'nt': # ئەگەر ویندۆز بوو
+tesseract_path = shutil.which("tesseract")
+
+if os.name == 'nt': # ئەگەر لەسەر کۆمپیوتەرەکەت بوویت (Windows)
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-else: # ئەگەر لینوکس (Render) بوو
+elif tesseract_path: # ئەگەر لەسەر سێرڤەری Railway بوویت و Nixpacks دایبەزاندبوو
+    pytesseract.pytesseract.tesseract_cmd = tesseract_path
+else:
+    # وەک دوا هەوڵ ئەگەر لە هیچ کام لەوانە نەبوو
     pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
+
+print(f"✅ OCR Engine Path: {pytesseract.pytesseract.tesseract_cmd}")
 
 # ===================== NLLB TRANSLATOR SETUP =====================
 # 🔒 LOAD ENVIRONMENT VARIABLES
@@ -761,7 +766,6 @@ def chat(request: Request, message: Message):
 
 
 
-# ===================== IMAGE ANALYSIS ENDPOINT (OCR) =====================
 @app.post("/analyze-image")
 async def analyze_image(
     prompt: str = Form(...),
@@ -769,35 +773,50 @@ async def analyze_image(
     user_id: str = Form("default_user"),
     conversation_id: Optional[int] = Form(None)
 ):
-    os.makedirs("uploads", exist_ok=True)
+    # دڵنیابوونەوە لە هەبوونی فۆڵدەر بە شێوەیەکی سەلامەت
+    upload_dir = "uploads"
+    if not os.path.exists(upload_dir):
+        os.makedirs(upload_dir)
     
     if not conversation_id:
         conversation_id = create_conversation(user_id, f"Image Analysis: {prompt[:30]}")
     
-    input_path = f"uploads/analyze_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}_{image.filename}"
+    # دروستکردنی ناوێکی یونیک بۆ وێنەکە بۆ ئەوەی تێکەڵ نەبن
+    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    # لابردنی پاشگری وێنەکە و دروستکردنی ناوێکی نوێ
+    extension = os.path.splitext(image.filename)[1]
+    filename = f"analyze_{timestamp}{extension}"
+    input_path = os.path.join(upload_dir, filename)
     
-    with open(input_path, "wb") as buffer:
-        shutil.copyfileobj(image.file, buffer)
+    # پاشکەوتکردنی وێنەکە
+    try:
+        with open(input_path, "wb") as buffer:
+            shutil.copyfileobj(image.file, buffer)
+    except Exception as e:
+        return {"type": "error", "reply": f"کێشە لە پاشکەوتکردنی وێنەکە هەبوو: {str(e)}"}
     
+    # دەرهێنانی دەق لە وێنەکە
     extracted_text = extract_text_from_image(input_path)
     
-    if not extracted_text or len(extracted_text) < 5:
-        reply = "I couldn't read any text from this image. Please make sure the image is clear and contains text or code."
+    if not extracted_text or len(extracted_text.strip()) < 3:
+        reply = "ناتوانم هیچ دەقێک لەم وێنەیەدا بخوێنمەوە. تکایە دڵنیابەرەوە وێنەکە ڕوون بێت و دەق یان کۆدی تێدا بێت."
     else:
         prompt_lower = prompt.lower()
-        code_keywords = ["code", "error", "bug", "wrong", "fix", "problem", "issue", "debug"]
+        code_keywords = ["code", "error", "bug", "wrong", "fix", "problem", "issue", "debug", "کۆد", "هەڵە"]
         is_code_question = any(keyword in prompt_lower for keyword in code_keywords)
         
         if is_code_question:
+            # ناردنی دەقەکە بۆ مۆدێلی شیکردنەوەی کۆد
             reply = analyze_code_with_groq(extracted_text, prompt, conversation_id, user_id)
         else:
-            analysis_prompt = f"""The user sent an image containing this text:
-
+            # ناردنی دەقەکە وەک پرسیارێکی گشتی بۆ Groq
+            analysis_prompt = f"""دەقی دەرهێنراو لە وێنەکە:
+---
 {extracted_text}
+---
+پرسیاری بەکارهێنەر: {prompt}
 
-User's question: {prompt}
-
-Please provide a helpful answer based on the text content."""
+تکایە وەڵامێکی گونجاو بدەرەوە لەسەر بنەمای دەقەکە."""
             
             reply = call_groq(analysis_prompt, conversation_id, user_id)
     
@@ -1185,6 +1204,54 @@ If asked about identity, respond in {user_language}: "I am Kurdish AI, created b
     save_privacy_message(user_id, conversation_id, "assistant", ai_response)
     
     return {"reply": ai_response, "conversation_id": conversation_id}
+
+
+@app.post("/analyze-privacy-image")
+async def analyze_privacy_image(
+    prompt: str = Form(...),
+    image: UploadFile = File(...),
+    user_id: str = Form(...),
+    conversation_id: Optional[int] = Form(None)
+):
+    # 1. دروستکردنی فۆڵدەرێکی تایبەت بۆ وێنە پارێزراوەکان
+    privacy_upload_dir = "uploads/privacy"
+    os.makedirs(privacy_upload_dir, exist_ok=True)
+    
+    # 2. دروستکردنی Conversation ئەگەر نەبوو (لە خشتەی Privacy)
+    if not conversation_id:
+        conversation_id = create_privacy_conversation(user_id, f"🔒 Private Image: {prompt[:20]}")
+    
+    # 3. پاشکەوتکردنی وێنەکە بە ناوێکی پارێزراو
+    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f"priv_{timestamp}_{image.filename}"
+    input_path = os.path.join(privacy_upload_dir, filename)
+    
+    with open(input_path, "wb") as buffer:
+        shutil.copyfileobj(image.file, buffer)
+    
+    # 4. OCR و شیکردنەوە
+    extracted_text = extract_text_from_image(input_path)
+    
+    if not extracted_text or len(extracted_text.strip()) < 3:
+        reply = "ناتوانم دەقەکە بخوێنمەوە، تکایە وێنەیەکی ڕوونتر بنێرە."
+    else:
+        # لێرەدا بانگی call_privacy_message یان هاوشێوەکانی دەکەیت
+        analysis_prompt = f"Private Image Content:\n{extracted_text}\n\nQuestion: {prompt}"
+        
+        # تێبینی: دەبێت فانکشنێک بەکاربهێنیت کە نامەکە لە داتابەیسی Privacy سەیڤ بکات
+        reply = save_privacy_message(conversation_id, "user", prompt) # سەیڤکردنی پرسیار
+        ai_reply = call_kurdish_ai(analysis_prompt) # یان هەر مۆدێلێکی تر
+        save_privacy_message(conversation_id, "assistant", ai_reply) # سەیڤکردنی وەڵام
+        reply = ai_reply
+
+    # 5. سەیڤکردنی زانیاری وێنەکە لە خشتەی Privacy Images
+    save_privacy_image(user_id, conversation_id, input_path)
+    
+    return {
+        "type": "text",
+        "reply": reply,
+        "conversation_id": conversation_id
+    }
 
 @app.delete("/privacy/conversation/{conversation_id}")
 def delete_privacy_conversation(conversation_id: int):
