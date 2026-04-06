@@ -474,10 +474,14 @@ def detect_user_intent(text: str):
 def extract_text_from_image(image_path: str):
     try:
         img = Image.open(image_path)
+        # 🛠️ پێشنیار: وێنەکە بکە بە ڕەش و سپی بۆ ئەوەی باشتر بیخوێنێتەوە
+        img = img.convert('L') 
+        
         text = pytesseract.image_to_string(img)
         return text.strip()
     except Exception as e:
-        return f"Error reading image: {str(e)}"
+        print(f"❌ OCR Runtime Error: {str(e)}") # ئەمە تەنها لە Logs دەردەکەوێت
+        return "" # ⚠️ زۆر گرنگە: لێرەدا هیچی بۆ مەگەڕێنەرەوە (Empty String)
 
 def analyze_code_with_groq(code_text: str, user_prompt: str, conversation_id: int, user_id: str):
     analysis_prompt = f"""You are an expert programming teacher. A student has sent you code and needs help.
