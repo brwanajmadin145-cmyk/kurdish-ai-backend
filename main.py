@@ -24,7 +24,7 @@ import os
 import re
 from dotenv import load_dotenv
 from groq import Groq
-from generate import generate_image, edit_image
+from generate import generate_image
 from presentation_generator import generate_gamma_presentation
 from pdf_generator import generate_pdf_document
 from word_generator import generate_word_document
