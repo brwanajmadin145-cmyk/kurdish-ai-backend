@@ -1,17 +1,28 @@
-openai
-gunicorn
-uvicorn
+# Web Framework & Server
 fastapi
+uvicorn
+gunicorn
+python-multipart
+
+# AI & APIs
+openai
+groq
+transformers
+torch --index-url https://download.pytorch.org/whl/cpu
 python-dotenv
 requests
+
+# Database
 psycopg2-binary
+
+# Security & Utilities
 slowapi
+
+# OCR & Image Processing
+pytesseract
 pillow
+
+# File Generation
 reportlab
 python-docx
 python-pptx
-pytesseract
-python-multipart
-transformers
-torch
-groq
