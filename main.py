@@ -807,42 +807,6 @@ Please provide a helpful answer based on the text content."""
         "conversation_id": conversation_id
     }
 
-# ===================== IMAGE EDIT ENDPOINT =====================
-@app.post("/image-edit")
-async def image_edit(
-    prompt: str = Form(...),
-    image: UploadFile = File(...),
-    user_id: str = Form("default_user"),
-    conversation_id: Optional[int] = Form(None)
-):
-    os.makedirs("uploads", exist_ok=True)
-    
-    if not conversation_id:
-        conversation_id = create_conversation(user_id, f"Image Edit: {prompt[:30]}")
-
-    input_path = f"uploads/input_{image.filename}"
-    output_name = f"edited_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
-
-    with open(input_path, "wb") as buffer:
-        shutil.copyfileobj(image.file, buffer)
-    
-    edited_file = edit_image(
-        image_path=input_path,
-        prompt=prompt,
-        filename=output_name
-    )
-    
-    image_url = f"/file/{edited_file}"
-    
-    save_message(user_id, conversation_id, "user", f"Edit image: {prompt}")
-    save_message(user_id, conversation_id, "assistant", f"Edited image: {edited_file}")
-    save_image(user_id, conversation_id, image_url, prompt, "edited")
-
-    return {
-        "type": "image",
-        "url": image_url,
-        "conversation_id": conversation_id
-    }
 
 # ===================== GET ALL CONVERSATIONS =====================
 @app.get("/conversations/{user_id}")
