@@ -2,8 +2,7 @@ import os
 from openai import OpenAI
 from dotenv import load_dotenv
 import requests
-from PIL import Image
-from io import BytesIO
+
 
 load_dotenv()
 
@@ -54,61 +53,6 @@ def generate_image(prompt, filename="output.png"):
     except Exception as e:
         print(f"❌ DALL-E 3 error: {e}")
         return None
-
-
-def edit_image(image_path, prompt, filename="edited.png"):
-    """Edit image using DALL-E 2 (DALL-E 3 doesn't support editing yet)"""
-    print(f"✏️ Editing image with DALL-E 2: {prompt[:50]}...")
-    
-    filepath = f"{IMAGE_FOLDER}/{filename}"
-    
-    try:
-        # Open and prepare the image
-        img = Image.open(image_path).convert("RGBA")
-        
-        # Resize to 1024x1024 (DALL-E requirement)
-        img = img.resize((1024, 1024))
-        
-        # Save as PNG temporarily
-        temp_path = f"{IMAGE_FOLDER}/temp_edit.png"
-        img.save(temp_path, "PNG")
-        
-        # 🔥 EDIT WITH DALL-E 2
-        with open(temp_path, "rb") as image_file:
-            response = client.images.edit(
-                model="dall-e-2",
-                image=image_file,
-                prompt=f"Transform this image: {prompt}. Keep the overall composition but apply the changes. High quality, professional.",
-                n=1,
-                size="1024x1024"
-            )
-        
-        # Get the edited image URL
-        image_url = response.data[0].url
-        
-        # Download the edited image
-        print("📥 Downloading edited image...")
-        img_response = requests.get(image_url, timeout=60)
-        
-        if img_response.status_code == 200:
-            with open(filepath, 'wb') as f:
-                f.write(img_response.content)
-            
-            # Clean up temp file
-            if os.path.exists(temp_path):
-                os.remove(temp_path)
-            
-            print(f"✅ Edited image saved: {filepath}")
-            return filepath
-        else:
-            print(f"❌ Download failed: {img_response.status_code}")
-            return None
-            
-    except Exception as e:
-        print(f"❌ Edit error: {e}")
-        print(f"💡 Generating new image instead...")
-        # Fallback: generate a new image with the edit prompt
-        return generate_image(f"{prompt}, high quality, professional", filename)
 
 
 # Test function
