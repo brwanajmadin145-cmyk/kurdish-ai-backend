@@ -1,10 +1,5 @@
 [phases.setup]
-nixPkgs = ["python3", "tesseract"]
-aptPkgs = ["tesseract-ocr", "libtesseract-dev"]
+nixPkgs = ["python3"]
 
 [phases.build]
 cmds = ["pip install -r requirements.txt"]
-
-[variables]
-# دیاریکردنی شوێنی زمانەکان بۆ ئەوەی تێسێراکت وون نەبێت
-TESSDATA_PREFIX = "/usr/share/tesseract-ocr/5/tessdata"
