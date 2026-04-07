@@ -1207,7 +1207,7 @@ If asked about identity, respond in {user_language}: "I am Kurdish AI, created b
     return {"reply": ai_response, "conversation_id": conversation_id}
 
 
-@app.post("/analyze-privacy-image")
+@app.post("/privacy/analyze-image")
 async def analyze_privacy_image(
     prompt: str = Form(...),
     image: UploadFile = File(...),
