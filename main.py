@@ -41,39 +41,6 @@ from db_config import (
     save_privacy_file, get_user_privacy_files, reset_privacy_data
 )
 
-async def analyze_image_with_ai(image_path: str, prompt: str):
-    """بەکارهێنانی AI بۆ خوێندنەوەی وێنە لە جیاتی Tesseract"""
-    try:
-        with open(image_path, "rb") as image_file:
-            base64_image = base64.b64encode(image_file.read()).decode('utf-8')
-
-        headers = {
-            "Authorization": f"Bearer {os.getenv('OPENROUTER_API_KEY')}",
-            "Content-Type": "application/json"
-        }
-
-        payload = {
-            "model": "openai/gpt-4o-mini", # خێرا و هەرزان و زیرەک
-            "messages": [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": f"تکایە ئەم وێنەیە شیکەرەوە و وەڵامی ئەمە بدەرەوە: {prompt}"},
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}
-                        }
-                    ]
-                }
-            ]
-        }
-
-        response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
-        result = response.json()
-        return result['choices'][0]['message']['content']
-    except Exception as e:
-        print(f"❌ Vision Error: {str(e)}")
-        return "ببورە، کێشەیەک لە شیکردنەوەی وێنەکەدا ڕوویدا."
 
 # 🔒 LOAD ENVIRONMENT VARIABLES
 load_dotenv()
@@ -109,25 +76,39 @@ BASE_URL = os.getenv("BASE_URL", "https://kurdish-ai-backend-production.up.railw
 document_buffer = ""
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# ===================== FINAL TESSERACT FIX =====================
-import os
-import shutil
+async def analyze_image_with_ai(image_path: str, prompt: str):
+    """بەکارهێنانی AI بۆ خوێندنەوەی وێنە لە جیاتی Tesseract"""
+    try:
+        with open(image_path, "rb") as image_file:
+            base64_image = base64.b64encode(image_file.read()).decode('utf-8')
 
-if os.name == 'nt': 
-    # بۆ کۆمپیوتەرەکەی خۆت (Windows)
-    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-else: 
-    # بۆ Railway (Linux) - ئەمە ناونیشانی فەرمی و جێگیری Railwayـە
-    tess_path = "/usr/bin/tesseract"
-    
-    if os.path.exists(tess_path):
-        pytesseract.pytesseract.tesseract_cmd = tess_path
-    else:
-        # ئەگەر لەوێ نەبوو، با لێی بگەڕێت
-        pytesseract.pytesseract.tesseract_cmd = shutil.which("tesseract") or "tesseract"
+        headers = {
+            "Authorization": f"Bearer {os.getenv('OPENROUTER_API_KEY')}",
+            "Content-Type": "application/json"
+        }
 
-# 💡 زۆر گرنگ: زیادکردنی ڕێڕەوی باینەری بۆ ناو سیستەمەکە بە دەست
-os.environ["PATH"] += os.pathsep + "/usr/bin"
+        payload = {
+            "model": "openai/gpt-4o-mini", # خێرا و هەرزان و زیرەک
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": f"تکایە ئەم وێنەیە شیکەرەوە و وەڵامی ئەمە بدەرەوە: {prompt}"},
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}
+                        }
+                    ]
+                }
+            ]
+        }
+
+        response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
+        result = response.json()
+        return result['choices'][0]['message']['content']
+    except Exception as e:
+        print(f"❌ Vision Error: {str(e)}")
+        return "ببورە، کێشەیەک لە شیکردنەوەی وێنەکەدا ڕوویدا."
 
 # ===================== NLLB TRANSLATOR SETUP =====================
 # 🔒 LOAD ENVIRONMENT VARIABLES
