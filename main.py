@@ -74,26 +74,25 @@ BASE_URL = os.getenv("BASE_URL", "https://kurdish-ai-backend-production.up.railw
 document_buffer = ""
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# ===================== TESSERACT OCR SETUP =====================
-# ✅ لێرەدا پێویست ناکات جارێکی تر shutil.which لە دەرەوە بنووسیت
+# ===================== FINAL TESSERACT FIX =====================
+import os
+import shutil
 
 if os.name == 'nt': 
-    # ✅ ئەمە بۆ کۆمپیوتەرەکەی خۆت (Windows)
-    # دڵنیابە تێسێراکتت لەم شوێنە دابەزاندووە
+    # بۆ کۆمپیوتەرەکەی خۆت (Windows)
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 else: 
-    # ✅ ئەمە بۆ سێرڤەری Railway (Linux)
-    # گەڕان بەدوای تێسێراکت لە شوێنە باوەکانی لینوکس
-    tess_bin = shutil.which("tesseract") or "/usr/bin/tesseract"
+    # بۆ Railway (Linux) - ئەمە ناونیشانی فەرمی و جێگیری Railwayـە
+    tess_path = "/usr/bin/tesseract"
     
-    if os.path.exists(tess_bin):
-        pytesseract.pytesseract.tesseract_cmd = tess_bin
-        # زیادکردنی بۆ ناو PATH ی سێرڤەرەکە بۆ ئەوەی پایتۆن بیبینێت
-        os.environ["PATH"] += os.pathsep + os.path.dirname(tess_bin)
+    if os.path.exists(tess_path):
+        pytesseract.pytesseract.tesseract_cmd = tess_path
     else:
-        pytesseract.pytesseract.tesseract_cmd = 'tesseract'
+        # ئەگەر لەوێ نەبوو، با لێی بگەڕێت
+        pytesseract.pytesseract.tesseract_cmd = shutil.which("tesseract") or "tesseract"
 
-print(f"🚀 OCR Active on: {os.name} | Path: {pytesseract.pytesseract.tesseract_cmd}")
+# 💡 زۆر گرنگ: زیادکردنی ڕێڕەوی باینەری بۆ ناو سیستەمەکە بە دەست
+os.environ["PATH"] += os.pathsep + "/usr/bin"
 
 # ===================== NLLB TRANSLATOR SETUP =====================
 # 🔒 LOAD ENVIRONMENT VARIABLES
