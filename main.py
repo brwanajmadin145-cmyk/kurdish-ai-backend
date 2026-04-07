@@ -817,23 +817,15 @@ async def analyze_image(
 
     # 🚀 شیکردنەوە بە Vision API
     reply = await analyze_image_with_ai(input_path, prompt)
-    
-    # ✅ سەیڤکردن بە شێوەیەکی دروست بۆ ئەوەی داتابەیس تووشی هەڵە نەبێت
-    # ✅ سەیڤکردنی نامەکان بە ڕیزبەندی دروست (user_id یەکەمجار)
-    # ✅ ئەم ڕیزبەندییە باشترینە بۆ ناو هەردوو ئەندرۆید و ئای ئۆ ئێس
-try:
-    # 1. نامەی بەکارهێنەر سەیڤ بکە
-    save_message(str(user_id), int(conversation_id), "user", prompt)
-    
-    # 2. وێنەکە سەیڤ بکە (پێش وەڵامی AI)
-    save_image(str(user_id), int(conversation_id), input_path, prompt, "analysis")
-    
-    # 3. وەڵامی AI سەیڤ بکە
-    save_message(str(user_id), int(conversation_id), "assistant", reply)
-    
-except Exception as e:
-    print(f"⚠️ Database Save Error: {e}")
 
+    try:
+        save_message(str(user_id), int(conversation_id), "user", prompt)
+        save_image(str(user_id), int(conversation_id), input_path, prompt, "analysis")
+        save_message(str(user_id), int(conversation_id), "assistant", reply)
+
+    except Exception as e:
+        print(f"⚠️ Database Save Error: {e}")
+    
     return {"type": "text", "reply": reply, "conversation_id": conversation_id}
 
 # ===================== GET ALL CONVERSATIONS =====================
@@ -1236,20 +1228,14 @@ async def analyze_privacy_image(
         shutil.copyfileobj(image.file, buffer)
     
     reply = await analyze_image_with_ai(input_path, prompt)
-    
-    # ✅ سەیڤکردنی زانیارییەکان بۆ ناو داتابەیسی تایبەت (Privacy)
-try:
-    # 1. سەیڤکردنی نامەی بەکارهێنەر لەناو خشتەی privacy_messages
-    save_privacy_message(str(user_id), int(conversation_id), "user", prompt)
-    
-    # 2. سەیڤکردنی وێنەکە لەناو خشتەی privacy_images (پێش وەڵامی AI)
-    save_privacy_image(str(user_id), int(conversation_id), input_path, prompt, "analysis")
-    
-    # 3. سەیڤکردنی وەڵامی AI لەناو خشتەی privacy_messages
-    save_privacy_message(str(user_id), int(conversation_id), "assistant", reply)
-    
-except Exception as e:
-    print(f"⚠️ Privacy Database Save Error: {e}")
+
+    try:
+        save_privacy_message(str(user_id), int(conversation_id), "user", prompt)
+        save_privacy_image(str(user_id), int(conversation_id), input_path, prompt, "analysis")
+        save_privacy_message(str(user_id), int(conversation_id), "assistant", reply)
+
+    except Exception as e:
+        print(f"⚠️ Privacy Database Save Error: {e}")
     
     return {"type": "text", "reply": reply, "conversation_id": conversation_id}
     
