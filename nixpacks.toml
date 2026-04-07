@@ -1,5 +1,7 @@
 [phases.setup]
-nixPkgs = ["python3", "tesseract", "tesseract-langs.eng", "tesseract-langs.ara", "libtesseract"]
+nixPkgs = ["python3", "tesseract"]
+# ئەم دێڕەی خوارەوە زۆر گرنگە بۆ ئەوەی ڕاستەوخۆ لە ناو لینوکس دایبمەزرێنێت
+aptPkgs = ["tesseract-ocr", "libtesseract-dev", "tesseract-ocr-eng", "tesseract-ocr-ara"]
 
 [variables]
 TESSDATA_PREFIX = "/usr/share/tesseract-ocr/5/tessdata"
