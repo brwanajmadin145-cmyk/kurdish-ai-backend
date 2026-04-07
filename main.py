@@ -76,13 +76,15 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 tesseract_path = shutil.which("tesseract")
 
-if os.name == 'nt': # ئەگەر لەسەر کۆمپیوتەرەکەت بوویت (Windows)
+if os.name == 'nt': # Windows
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-elif tesseract_path: # ئەگەر لەسەر سێرڤەری Railway بوویت و Nixpacks دایبەزاندبوو
-    pytesseract.pytesseract.tesseract_cmd = tesseract_path
-else:
-    # وەک دوا هەوڵ ئەگەر لە هیچ کام لەوانە نەبوو
-    pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
+else: # Linux (Railway)
+    tess_bin = shutil.which("tesseract")
+    if tess_bin:
+        pytesseract.pytesseract.tesseract_cmd = tess_bin
+    else:
+        # ئەگەر shutil نەیدۆزییەوە، ئەمە ڕێڕەوە ستانداردەکەی Railway/Nixpacksە
+        pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
 
 print(f"✅ OCR Engine Path: {pytesseract.pytesseract.tesseract_cmd}")
 
