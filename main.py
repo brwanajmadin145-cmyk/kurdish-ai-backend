@@ -804,11 +804,10 @@ async def analyze_image(
     upload_dir = "uploads"
     os.makedirs(upload_dir, exist_ok=True)
     
-    # 1. دروستکردنی گفتوگۆ ئەگەر نەبوو
+    # دروستکردنی گفتوگۆ ئەگەر نەبوو
     if not conversation_id:
         conversation_id = create_conversation(user_id, f"Image Analysis: {prompt[:30]}")
     
-    # 2. پاشکەوتکردنی وێنەکە
     timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
     filename = f"analyze_{timestamp}_{image.filename}"
     input_path = os.path.join(upload_dir, filename)
@@ -816,16 +815,17 @@ async def analyze_image(
     with open(input_path, "wb") as buffer:
         shutil.copyfileobj(image.file, buffer)
 
-    # 3. 🚀 شیکردنەوە بە AI (Vision)
+    # 🚀 شیکردنەوە بە Vision API
     reply = await analyze_image_with_ai(input_path, prompt)
     
-    # 4. ✅ چاککردنی سەیڤکردن (زیادکردنی user_id بۆ ناو فانکشنەکە)
-    # تێبینی: بەپێی سیستەمەکەت، save_message پێویستی بە user_id هەیە
-    save_message(conversation_id, user_id, "user", prompt)
-    save_message(conversation_id, user_id, "assistant", reply)
-    
-    return {"type": "text", "reply": reply, "conversation_id": conversation_id}
+    # ✅ سەیڤکردن بە شێوەیەکی دروست بۆ ئەوەی داتابەیس تووشی هەڵە نەبێت
+    try:
+        save_message(int(conversation_id), str(user_id), "user", prompt)
+        save_message(int(conversation_id), str(user_id), "assistant", reply)
+    except Exception as e:
+        print(f"⚠️ Database Save Warning: {e}")
 
+    return {"type": "text", "reply": reply, "conversation_id": conversation_id}
 
 # ===================== GET ALL CONVERSATIONS =====================
 @app.get("/conversations/{user_id}")
@@ -1216,11 +1216,9 @@ async def analyze_privacy_image(
     privacy_upload_dir = "uploads/privacy"
     os.makedirs(privacy_upload_dir, exist_ok=True)
     
-    # 1. دروستکردنی Conversation لە خشتەی Privacy
     if not conversation_id:
         conversation_id = create_privacy_conversation(user_id, f"🔒 Private: {prompt[:20]}")
     
-    # 2. پاشکەوتکردنی وێنەکە بە شێوەیەکی پارێزراو
     timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
     filename = f"priv_{timestamp}_{image.filename}"
     input_path = os.path.join(privacy_upload_dir, filename)
@@ -1228,16 +1226,14 @@ async def analyze_privacy_image(
     with open(input_path, "wb") as buffer:
         shutil.copyfileobj(image.file, buffer)
     
-    # 3. 🚀 شیکردنەوە بە AI (Vision API)
     reply = await analyze_image_with_ai(input_path, prompt)
     
-    # 4. ✅ چاککردنی سەیڤکردن (زیادکردنی user_id)
-    # لێرەدا دەبێت user_id بنێریت بۆ ئەوەی داتابەیسەکە قبوڵی بکات
-    save_privacy_message(conversation_id, user_id, "user", prompt)
-    save_privacy_message(conversation_id, user_id, "assistant", reply)
-    
-    # 5. سەیڤکردنی زانیاری وێنەکە
-    save_privacy_image(user_id, conversation_id, input_path)
+    try:
+        save_privacy_message(int(conversation_id), str(user_id), "user", prompt)
+        save_privacy_message(int(conversation_id), str(user_id), "assistant", reply)
+        save_privacy_image(str(user_id), int(conversation_id), input_path)
+    except Exception as e:
+        print(f"⚠️ Privacy DB Save Warning: {e}")
     
     return {"type": "text", "reply": reply, "conversation_id": conversation_id}
     
