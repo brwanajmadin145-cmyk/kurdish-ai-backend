@@ -200,19 +200,20 @@ def create_conversation(user_id: str, title: str):
 
 
 def save_message(user_id: str, conversation_id: int, role: str, content: str):
-    """Save message to conversation"""
+    """Save message to conversation - FIXED ORDER"""
     if content:
         content = content.replace('\x00', '').replace('\0', '')
     
     with get_db() as conn:
         cursor = conn.cursor()
+        # لێرەدا ڕیزبەندی ستوونەکانمان ڕێکخستەوە تاوەکو تووشی Error نەبیت
         cursor.execute(
-            "INSERT INTO messages (conversation_id, user_id, role, content) VALUES (%s, %s, %s, %s)",
-            (conversation_id, user_id, role, content)
+            "INSERT INTO messages (user_id, conversation_id, role, content) VALUES (%s, %s, %s, %s)",
+            (str(user_id), int(conversation_id), role, content)
         )
         cursor.execute(
             "UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE conversation_id = %s",
-            (conversation_id,)
+            (int(conversation_id),)
         )
         conn.commit()
         cursor.close()
@@ -254,12 +255,12 @@ def get_all_conversations(user_id: str):
 # ===================== IMAGE FUNCTIONS =====================
 
 def save_image(user_id: str, conversation_id: int, image_url: str, prompt: str = "", image_type: str = "generated"):
-    """Save image"""
+    """Save image - FIXED ORDER"""
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO images (conversation_id, user_id, image_url, prompt, image_type) VALUES (%s, %s, %s, %s, %s)",
-            (conversation_id, user_id, image_url, prompt, image_type)
+            "INSERT INTO images (user_id, conversation_id, image_url, prompt, image_type) VALUES (%s, %s, %s, %s, %s)",
+            (str(user_id), int(conversation_id), image_url, prompt, image_type)
         )
         conn.commit()
         cursor.close()
@@ -428,23 +429,22 @@ def create_privacy_conversation(user_id: str, title: str):
 
 
 def save_privacy_message(user_id: str, conversation_id: int, role: str, content: str):
-    """Save message to PRIVACY conversation"""
+    """Save message to PRIVACY conversation - FIXED ORDER"""
     if content:
         content = content.replace('\x00', '').replace('\0', '')
     
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO privacy_messages (conversation_id, user_id, role, content) VALUES (%s, %s, %s, %s)",
-            (conversation_id, user_id, role, content)
+            "INSERT INTO privacy_messages (user_id, conversation_id, role, content) VALUES (%s, %s, %s, %s)",
+            (str(user_id), int(conversation_id), role, content)
         )
         cursor.execute(
             "UPDATE privacy_conversations SET updated_at = CURRENT_TIMESTAMP WHERE conversation_id = %s",
-            (conversation_id,)
+            (int(conversation_id),)
         )
         conn.commit()
         cursor.close()
-
 
 def get_privacy_conversation_history(conversation_id: int, limit: int = 50):
     """Get PRIVACY conversation messages"""
@@ -480,12 +480,12 @@ def get_all_privacy_conversations(user_id: str):
 
 
 def save_privacy_image(user_id: str, conversation_id: int, image_url: str, prompt: str = "", image_type: str = "generated"):
-    """Save PRIVACY image"""
+    """Save PRIVACY image - FIXED ORDER"""
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO privacy_images (conversation_id, user_id, image_url, prompt, image_type) VALUES (%s, %s, %s, %s, %s)",
-            (conversation_id, user_id, image_url, prompt, image_type)
+            "INSERT INTO privacy_images (user_id, conversation_id, image_url, prompt, image_type) VALUES (%s, %s, %s, %s, %s)",
+            (str(user_id), int(conversation_id), image_url, prompt, image_type)
         )
         conn.commit()
         cursor.close()
